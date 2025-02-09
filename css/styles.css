@@ -1,0 +1,61 @@
+@font-face {
+  font-family: "body-font";
+  src: url("../static/fonts/Neuton-Regular.ttf") format("truetype");
+  font-weight: 300;
+}
+
+:root {
+  --main: #0d2046;
+  --light: #e2e6ee;
+  --accent: #697267;
+  --bg: #988484;
+  --black: #292929;
+  --width-mode: auto;
+  --border-style: thin solid var(--main);
+  --radius-amount: 1px;
+}
+
+#content{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1em;
+
+}
+
+.revealable{
+  visibility: hidden;
+}
+
+.info{
+  display:flex;
+  flex-direction: row;
+  width: 70%;
+  align-items: center;
+}
+
+.info>div{
+  margin: 1em;
+  padding: .5em;
+  border: solid var(--main) thin;
+  width: 50%;
+  height: 10em;
+}
+
+.name{
+  font-size: xx-large;
+}
+.details{
+  font-size: small;
+}
+
+#banner{
+  font-size: large;
+}
+
+button{
+  font-variant: small-caps;
+  font-size: large;
+  margin: .25em;
+  padding: 1em;
+}
