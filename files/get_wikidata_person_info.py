@@ -4,13 +4,14 @@ from pathlib import Path
 import io
 import time
 import re
+import os
 
 HOME = Path(__file__).parent
 INSTANCES = {}
-MAX_N_PEOPLE = 2000
+MAX_N_PEOPLE = 500
 MAX_N_WORKS_PER_PEOPLE = 5
 CATEGORY = "all"
-DIRNAME = f"category/{CATEGORY}/{MAX_N_PEOPLE}/json"
+DIRNAME = f"category/{CATEGORY}/json/{MAX_N_PEOPLE}"
 
 
 def get_wikidata_json(key: str) -> dict:
@@ -18,7 +19,7 @@ def get_wikidata_json(key: str) -> dict:
         f"https://www.wikidata.org/w/api.php?action=wbgetentities&ids={key}&format=json"
     )
     data = requests.get(url)
-    time.sleep(0.1)
+    time.sleep(1)
 
     return data.json()["entities"][key]
 
@@ -83,7 +84,9 @@ def has_notable_works(jobj: dict) -> bool:
 
 def process_people_keys():
     keys = (
-        io.open(Path(HOME, f"category/{CATEGORY}/raw/keys.txt"), "r", encoding="utf8")
+        io.open(
+            Path(HOME, f"category/{CATEGORY}/raw/keys_b1900.txt"), "r", encoding="utf8"
+        )
         .read()
         .splitlines()
     )
@@ -97,11 +100,13 @@ def process_people_keys():
         birthdate = get_date(jobj, "birth")
         deathdate = get_date(jobj, "death")
 
+        has_dates = birthdate is not None and deathdate is not None
+
         if has_notable_works(jobj):
             works = get_notable_work_keys(jobj)
-            if works != []:
+            if works != [] and has_dates:
                 work_keys_dict[name] = works
-        if birthdate is not None and deathdate is not None:
+        if has_dates:
             print(f"{key} -- {name}")
             people_dict[name] = [key, birthdate, deathdate]
 
@@ -162,6 +167,9 @@ def store_works(work_keys_dict: dict):
 
 
 if __name__ == "__main__":
+
+    if not Path(HOME, DIRNAME).is_dir():
+        os.makedirs(Path(HOME, DIRNAME))
 
     people_dict, work_keys_dict = process_people_keys()
     save_people(people_dict, work_keys_dict)

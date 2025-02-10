@@ -5,9 +5,10 @@ var WORKS
 var DIFFICULTY
 var SOLUTION
 var QUESTION_TYPE
+var SCORE = 0
 
 const CATEGORY = "all"
-const N_FAM = 200
+const N_FAM = 500
 const URL = `./files/category/${CATEGORY}/json/${N_FAM}`
 
 function get_solution(b){
@@ -36,20 +37,22 @@ function rand_arr_item(arr){
   return arr[Math.round(Math.random()*(arr.length-1))]
 }
 // that's actually pretty nice
-const cumsum = (sum => value => sum += value)(0);
+const cumsum = (sum => value => sum += value);
 
 function weighted_rand_arr_item(arr,weights){
-  var cdf = weights.map(cumsum)
+  var cdf = weights.map(cumsum(0))
   var r = Math.random()
   for (let ind=0;ind<cdf.length;ind++){
-    if (r>cdf[ind]){
+    if (r<cdf[ind]){
+      // console.log(weights[ind],Math.max(...weights))
       return arr[ind]
+
     }
   }
 }
 
 function date_distance_weights(ref_year,years){
-  let weights= years.map((item)=>{return 1/(1+Math.abs(ref_year-item))})
+  let weights= years.map((item)=>{return Math.exp(-Math.abs(ref_year-item)/100)})
   let tot =weights.reduce((a, b) => a + b, 0)
   weights = weights.map((item)=>item/tot)
   return weights
@@ -61,27 +64,18 @@ function get_people_years(){
   return d
 }
 
-function rand_person(ref_year,persons){
-  let arr=Object.keys(persons)
+function rand_thing(ref_year,things,which){
+  var arr=Object.keys(things)
+  var p;
   if (ref_year == null){
-    var p = rand_arr_item(arr)
+    p = rand_arr_item(arr)
   }else{
-    var years = Object.keys(persons).map(item=>YEAR_DICT[item])
+    var years = Object.keys(things).map(item=>YEAR_DICT[item])
     var weights = date_distance_weights(ref_year,years)
-    var p = weighted_rand_arr_item(persons,weights)}
-  return [p,persons[p]]
-}
-
-function rand_work(ref_year,works){
-  var arr = Object.keys(works)
-  if (ref_year == null){
-    var p=rand_arr_item(arr)
-  }else{
-    var years = Object.keys(works).map(item=>YEAR_DICT[item])
-    var weights = date_distance_weights(ref_year,years)
-    var p = weighted_rand_arr_item(persons,weights)
-  }
-  return [p,rand_arr_item(works[p])]
+    p = weighted_rand_arr_item(arr,weights)}
+  if (which == "person"){
+  return [p,things[p]]}
+  else if (which=="work"){return [p,rand_arr_item(things[p])]}
 }
 
 
@@ -204,7 +198,12 @@ function init_game(){
   let banner = document.createElement("div")
   banner.setAttribute("id","banner")
 
+  let score = document.createElement("div")
+  score.setAttribute("id","score")
+  score.innerHTML = 0
+
   let content = document.getElementById("content")
+  content.appendChild(score)
   content.appendChild(banner)
   content.appendChild(info)
   content.appendChild(action)
@@ -298,12 +297,15 @@ function process_work(work,pos){
 function banner_result(choice){
   
   let banner=document.getElementById("banner")
+  let score=document.getElementById("score")
   let msg;
   if (SOLUTION == choice){
     msg = "Correct"
+    SCORE++
   }
   else{
     msg="False"
+    SCORE = 0
   }
   let neg = " "
   if (SOLUTION == "no"){
@@ -311,9 +313,10 @@ function banner_result(choice){
   }
   let done = "met"
   if (QUESTION_TYPE == "work"){
-    done = "known that work"
+    done = "known this"
   }
   banner.innerHTML = `${msg}. They could${neg}have ${done}!`
+  score.innerHTML = SCORE
 }
 
 function banner_question(question){
@@ -323,7 +326,7 @@ function banner_question(question){
 
 function game_loop(){
   clear_board()
-  person1 = rand_person(null,PEOPLE)
+  person1 = rand_thing(null,PEOPLE,"person")
   let person_year = YEAR_DICT[person1[0]]
   let [b1,d1]=process_person(person1,pos="left")
 
@@ -338,21 +341,21 @@ function game_loop(){
     
     let _people = {...PEOPLE}
     delete _people[[person1[0]]]
-    let [b2,d2]=process_person(rand_person(person_year,_people),pos="right")
+    let [b2,d2]=process_person(rand_thing(person_year,_people,"person"),pos="right")
     SOLUTION = get_solution(spans_overlap(b1,d1,b2,d2))
   }
   else if (thing2=="work"){
 
-    question = "Could they have known that work?"
+    question = "Could they have known this?"
 
     let rw;
     if (Object.keys(WORKS).includes(person1[0])){
       let _works = {...WORKS}
       delete _works[[person1[0]]]
-      rw = rand_work(person_year,_works)
+      rw = rand_thing(person_year,_works,"work")
     }
     else{
-      rw = rand_work(person_year,WORKS)
+      rw = rand_thing(person_year,WORKS,"work")
     }
     inception=process_work(rw,pos="right")
     SOLUTION = get_solution(is_older(inception,d1))
