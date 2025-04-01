@@ -15,7 +15,7 @@
   --radius-amount: 1px;
 }
 
-#content{
+#content {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -23,39 +23,78 @@
 
 }
 
-.revealable{
+.revealable {
   visibility: hidden;
 }
 
-.info{
-  display:flex;
+.info {
+  display: flex;
   flex-direction: row;
-  width: 70%;
+  width: 80%;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
+
 }
 
-.info>div{
+#left-item {
+  --shadow-color: red;
+}
+
+
+#right-item {
+  --shadow-color: blue;
+}
+
+#date-diagram {
+  --shadow-color: none;
+}
+
+.info>div,
+#date-diagram {
   margin: 1em;
   padding: .5em;
   border: solid var(--main) thin;
-  width: 50%;
+  width: 25em;
   height: 10em;
+  border-radius: 1%;
+  box-shadow: .5em .5em 0em var(--shadow-color);
 }
 
-.name{
+
+
+.name {
   font-size: xx-large;
 }
-.details{
+
+.details {
   font-size: small;
 }
 
-#banner{
+#banner {
   font-size: large;
 }
 
-button{
+
+button {
   font-variant: small-caps;
   font-size: large;
   margin: .25em;
   padding: 1em;
+}
+
+canvas {
+  width: 70%;
+  height: 10%;
+}
+
+.svg-text {
+  text-align: center;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-size: .75em;
+}
+
+.small {
+  font-size: .5em;
 }

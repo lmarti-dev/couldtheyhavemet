@@ -7,9 +7,14 @@ var SOLUTION
 var QUESTION_TYPE
 var SCORE = 0
 
+var DATES = {"left":null,"right":null}
+
 const CATEGORY = "all"
 const N_FAM = 500
 const URL = `./files/category/${CATEGORY}/json/${N_FAM}`
+
+const SVG_W = 200
+const SVG_H = 100
 
 function get_solution(b){
 // next level coding watch out 10x moves here
@@ -44,7 +49,6 @@ function weighted_rand_arr_item(arr,weights){
   var r = Math.random()
   for (let ind=0;ind<cdf.length;ind++){
     if (r<cdf[ind]){
-      // console.log(weights[ind],Math.max(...weights))
       return arr[ind]
 
     }
@@ -143,6 +147,8 @@ function resolve(choice){
   let banner = document.getElementById("banner")
   
   banner_result(choice)
+  reveal_dates()
+  draw_diagram(DATES)
   toggle_freezable("disable")
   toggle_revealable("visible")
 
@@ -200,13 +206,14 @@ function init_game(){
 
   let score = document.createElement("div")
   score.setAttribute("id","score")
-  score.innerHTML = 0
 
   let content = document.getElementById("content")
   content.appendChild(score)
   content.appendChild(banner)
   content.appendChild(info)
   content.appendChild(action)
+  
+  set_score()
 
 
 }
@@ -240,11 +247,165 @@ function clear_board(){
   }
   toggle_freezable("enable")
   toggle_revealable("hidden")
+  clear_dates()
+  clear_svg()
+  draw_diagram(null)
 
 }
 
 function wikidata_link(key){
   return `<a target='_blank' href='https://www.wikidata.org/wiki/${key}'>${key}</a>`
+}
+
+
+function populate_dates(pos,deets){
+  DATES[[pos]] = deets
+}
+
+
+
+function create_svg(){
+  let svg = document.createElementNS("http://www.w3.org/2000/svg","svg")
+  svg.setAttribute("id","date-diagram")
+  svg.setAttribute("viewBox",`0 0 ${SVG_W} ${SVG_H}`)
+  svg.setAttribute("height","100")
+  svg.setAttribute("width","300")
+  svg.setAttribute("xmlns","http://www.w3.org/2000/svg")
+  let div = document.getElementById("content")
+  div.appendChild(svg)
+}
+
+function line(x1,x2,y1,y2,width=1.22,color="black"){
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:${color};stroke-width:${width}" />`
+}
+
+
+function text(x,y,text,_class=null){
+  let classes = Boolean(_class) ? "svg-text " + _class : "svg-text"
+  return `<text x="${x}" y="${y}" class="${classes}">${text}</text>`
+}
+
+function circle(x,y,r,width=1.22,color="black"){
+  return `<circle cx="${x}" cy="${y}" r="${r}" stroke-width="${width}" stroke="${color}" fill="none" />`
+}
+
+function get_date_kind(date){
+  let which = date.length != undefined ? "person" : "work";
+  return which
+}
+
+function get_extremal_years(dates){
+  let arr=[]
+  let keys = Object.keys(dates)
+  for (let ind=0;ind<keys.length;ind++){
+    arr.push(...thing_to_years(dates[[keys[ind]]]))
+
+  }
+  // of course Math.min/max doesn't take an array as input
+  // because the people who wrote it are not used to go past 10 fingers
+  // who ever uses the number 34 it's way too high
+  return [Math.min(...arr), Math.max(...arr)]
+}
+
+function thing_to_years(thing){
+  let arr = []
+    let which = get_date_kind(thing)
+    if (which=="person"){
+      arr.push(...thing.map(x=>x.getFullYear()))
+    }
+    else if (which=="work"){
+      arr.push(thing.getFullYear())
+    }
+    return arr
+  
+}
+
+
+function draw_diagram(dates){
+
+  let n_ticks = 20;
+  let stack_height = 13;
+  let tick_height = 3;
+  let colors = ["red","blue"]
+
+
+  let svg = document.getElementById("date-diagram")
+  svg.innerHTML =""
+
+  svg.innerHTML+= line(0,SVG_W,SVG_H,SVG_H,1.33) 
+
+  for(x in [...Array(n_ticks).keys()]){
+    var linterp = (x/(n_ticks-1)) * SVG_W
+    svg.innerHTML+=line(linterp,linterp,SVG_H,SVG_H-tick_height,1) 
+    svg.innerHTML+=line(linterp,linterp,SVG_H,0,.1,"silver") 
+  }
+
+  if (dates != null){
+    let years = get_extremal_years(dates)
+    // svg.innerHTML += text(0,SVG_H-stack_height,years[0])
+    // svg.innerHTML += text(SVG_W,SVG_H-stack_height,years[1])
+
+    let year_coor = (x) => SVG_W*(x-years[0]) / (years[1]-years[0])
+
+    let keys = Object.keys(dates)
+    for (let ind=0;ind<keys.length;ind++){
+      let span = thing_to_years(dates[[keys[ind]]])
+      if (span.length==1){
+        let tick_start = SVG_H-(2*(ind+1)*stack_height)
+        svg.innerHTML+= circle(year_coor(span[0]),tick_start,stack_height/2,1.22,colors[ind]) 
+        svg.innerHTML+= line(year_coor(span[0]),year_coor(span[0]),tick_start,tick_start-stack_height/2,1.22,colors[ind]) 
+        svg.innerHTML += text(year_coor(span[0]),tick_start-stack_height,span[0],"small")
+      } else if  (span.length==2){
+        let bar_height =SVG_H-(2*(ind+1)*stack_height)
+        svg.innerHTML += line(year_coor(span[0]),year_coor(span[1]),bar_height,bar_height,12,colors[ind]) 
+        svg.innerHTML += text(year_coor(span[0]),bar_height-stack_height,span[0],"small")
+        svg.innerHTML += text(year_coor(span[1]),bar_height-stack_height,span[1],"small")
+
+      }
+    } 
+
+  }else{
+    svg.innerHTML += text(0,SVG_H-stack_height,"0")
+    svg.innerHTML += text(SVG_W,SVG_H-stack_height,"2025")
+    
+  }
+}
+
+function clear_svg(){
+  let svg = document.getElementById("date-diagram")
+  svg.innerHTML=""
+}
+
+function reveal_dates(){
+    
+    // date_div.setAttribute("class","revealable")
+  let keys = Object.keys(DATES)
+  for (let ind=0;ind<keys.length;ind++){
+    let date_div = document.createElement("div")
+    let which = get_date_kind(DATES[[keys[ind]]])
+    let pos = keys[ind]
+    let div = document.getElementById(`${pos}-item`)
+  if (which=="person"){
+    let b = DATES[[pos]][0]
+    let d = DATES[[pos]][1]
+    date_div.innerHTML = `b. ${b.getFullYear()} d. ${d.getFullYear()}`
+  }else if(which=="work"){
+    let inception = DATES[[pos]]
+    date_div.innerHTML = inception.getFullYear()
+  }
+  date_div.setAttribute("id",`${pos}-date`)
+  date_div.setAttribute("class",`date`)
+  div.appendChild(date_div)
+}
+
+}
+
+function clear_dates(){
+  for (pos in {"left":0,"right":1}){ 
+  let div = document.getElementById(`${pos}-date`)
+  if (div != null){
+  div.remove()}
+  }
 }
 
 function process_thing(thing,pos,which){
@@ -264,7 +425,7 @@ function process_thing(thing,pos,which){
     person_date.innerHTML = `b. ${b.getFullYear()} d. ${d.getFullYear()}`
     div.append(person)
     div.append(person_details)
-    div.append(person_date)
+    // div.append(person_date)
     res = [b,d]
   }else if (which=="work"){
     let work_name = document.createElement("div")
@@ -277,11 +438,13 @@ function process_thing(thing,pos,which){
     work_date.setAttribute("class","revealable")
     let inception = date_from_arr(thing[1][2])
     work_date.innerHTML = inception.getFullYear()
+
     div.append(work_name)
     div.append(work_details)
-    div.append(work_date)
+    // div.append(work_date)
     res = inception
   }
+  populate_dates(pos,res)
   return res
 }
 
@@ -294,10 +457,20 @@ function process_work(work,pos){
 }
 
 
+function left_pad(item,pad_len,pad_with){
+  let int_len = String(item).split("").length 
+  return Array(pad_len-int_len).fill(pad_with).join("") + item
+}
+
+
+function set_score(){
+  let score=document.getElementById("score")
+  score.innerHTML = `Score: ${left_pad(SCORE,4,"0")}`
+}
+
 function banner_result(choice){
   
   let banner=document.getElementById("banner")
-  let score=document.getElementById("score")
   let msg;
   if (SOLUTION == choice){
     msg = "Correct"
@@ -316,7 +489,7 @@ function banner_result(choice){
     done = "known this"
   }
   banner.innerHTML = `${msg}. They could${neg}have ${done}!`
-  score.innerHTML = SCORE
+  set_score()
 }
 
 function banner_question(question){
@@ -362,9 +535,9 @@ function game_loop(){
     
   }
   banner_question(question)
-  
-
 }
+
+
 
 async function main() {
   PEOPLE = await load_people()
@@ -372,7 +545,8 @@ async function main() {
   WORKS = await load_works()
   // choose_difficulty()
   init_game()
-    game_loop()
+  create_svg()
+  game_loop()
 };
 
 
