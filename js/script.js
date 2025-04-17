@@ -11,7 +11,7 @@ var DATES = {"left":null,"right":null}
 
 const CATEGORY = "all"
 const N_FAM = 500
-const URL = `./files/category/${CATEGORY}/json/${N_FAM}`
+const URL = `./files/nature/category/${CATEGORY}/json/${N_FAM}`
 
 const SVG_W = 200
 const SVG_H = 100
@@ -208,9 +208,14 @@ function init_game(){
   score.setAttribute("id","score")
 
   let content = document.getElementById("content")
+
+  let svg = create_svg()
+
+  content.innerHTML=""
   content.appendChild(score)
   content.appendChild(banner)
   content.appendChild(info)
+  content.appendChild(svg)
   content.appendChild(action)
   
   set_score()
@@ -271,8 +276,7 @@ function create_svg(){
   svg.setAttribute("height","100")
   svg.setAttribute("width","300")
   svg.setAttribute("xmlns","http://www.w3.org/2000/svg")
-  let div = document.getElementById("content")
-  div.appendChild(svg)
+  return svg
 }
 
 function line(x1,x2,y1,y2,width=1.22,color="black"){
@@ -346,6 +350,7 @@ function draw_diagram(dates){
     // svg.innerHTML += text(SVG_W,SVG_H-stack_height,years[1])
 
     let year_coor = (x) => SVG_W*(x-years[0]) / (years[1]-years[0])
+    let nudge = SVG_W*.02
 
     let keys = Object.keys(dates)
     for (let ind=0;ind<keys.length;ind++){
@@ -358,8 +363,8 @@ function draw_diagram(dates){
       } else if  (span.length==2){
         let bar_height =SVG_H-(2*(ind+1)*stack_height)
         svg.innerHTML += line(year_coor(span[0]),year_coor(span[1]),bar_height,bar_height,12,colors[ind]) 
-        svg.innerHTML += text(year_coor(span[0]),bar_height-stack_height,span[0],"small")
-        svg.innerHTML += text(year_coor(span[1]),bar_height-stack_height,span[1],"small")
+        svg.innerHTML += text(year_coor(span[0])-nudge,bar_height-stack_height,span[0],"small")
+        svg.innerHTML += text(year_coor(span[1])+nudge,bar_height-stack_height,span[1],"small")
 
       }
     } 
@@ -385,17 +390,17 @@ function reveal_dates(){
     let which = get_date_kind(DATES[[keys[ind]]])
     let pos = keys[ind]
     let div = document.getElementById(`${pos}-item`)
-  if (which=="person"){
-    let b = DATES[[pos]][0]
-    let d = DATES[[pos]][1]
-    date_div.innerHTML = `b. ${b.getFullYear()} d. ${d.getFullYear()}`
-  }else if(which=="work"){
-    let inception = DATES[[pos]]
-    date_div.innerHTML = inception.getFullYear()
-  }
-  date_div.setAttribute("id",`${pos}-date`)
-  date_div.setAttribute("class",`date`)
-  div.appendChild(date_div)
+    if (which=="person"){
+      let b = DATES[[pos]][0]
+      let d = DATES[[pos]][1]
+      date_div.innerHTML = `b. ${b.getFullYear()} d. ${d.getFullYear()}`
+    } else if(which=="work"){
+      let inception = DATES[[pos]]
+      date_div.innerHTML = inception.getFullYear()
+    }
+    date_div.setAttribute("id",`${pos}-date`)
+    date_div.setAttribute("class",`date`)
+    div.insertBefore(date_div, div.childNodes[1]);
 }
 
 }
@@ -539,13 +544,20 @@ function game_loop(){
 
 
 
-async function main() {
+async function load_all(){
+  let content = document.getElementById("content")
+  content.innerHTML = "Loading 1/3";
   PEOPLE = await load_people()
+  content.innerHTML = "Loading 2/3";
   YEAR_DICT = get_people_years()
+  content.innerHTML = "Loading 3/3";
   WORKS = await load_works()
+}
+
+async function main() {
+  await load_all()
   // choose_difficulty()
   init_game()
-  create_svg()
   game_loop()
 };
 

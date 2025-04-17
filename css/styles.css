@@ -61,14 +61,31 @@
   box-shadow: .5em .5em 0em var(--shadow-color);
 }
 
+.info>div {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 
 
 .name {
   font-size: xx-large;
+  line-height: 1em;
 }
 
 .details {
   font-size: small;
+  align-self: flex-end;
+}
+
+.date {
+  align-self: center;
+  font-style: italic;
+  background-color: var(--shadow-color);
+  color: white;
+  padding: .5em;
+  border-radius: 1%;
 }
 
 #banner {
@@ -97,4 +114,10 @@ canvas {
 
 .small {
   font-size: .5em;
+}
+
+@media (max-width: 1250px) {
+  .info {
+    width: 100%;
+  }
 }
