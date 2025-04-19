@@ -23,6 +23,17 @@ def get_wikidata_json(key: str) -> dict:
     return info
 
 
+def get_wikidata_links(key: str) -> dict:
+    url = f"https://www.wikidata.org/w/api.php?action=wbgetentities&ids={key}&format=json&props=sitelinks/urls"
+    data = requests.get(url)
+    time.sleep(0.5)
+    jobj = data.json()
+    info = jobj["entities"][key]
+    if "missing" in info.keys():
+        return None
+    return info
+
+
 def get_name(jobj: dict):
     lang = "en"
     if "en" not in jobj["labels"].keys():
@@ -98,19 +109,20 @@ def scrape_people_from_nature(max_n_persons: int):
 def process_wikidata_keys(keys: str, max_n_persons: int):
 
     n = 0
+    n_char = len(str(max_n_persons))
     work_keys_dict = {}
     people_dict = {}
     for key in keys:
         payload = get_person_data_from_key(key)
         if payload is not None:
-            name, birthdate, deathdate, has_dates, works = payload
+            name, birthdate, deathdate, has_dates, works, wiki_link = payload
 
             if works != [] and has_dates:
                 work_keys_dict[name] = works
 
             if has_dates:
-                print(f"{key} -- {name}")
-                people_dict[name] = [key, birthdate, deathdate]
+                print(f"{n: >{n_char}}/{max_n_persons} {key} -- {name}")
+                people_dict[name] = [key, birthdate, deathdate, wiki_link]
 
             n += 1
             if n == max_n_persons:
@@ -131,11 +143,13 @@ def get_person_data_from_key(key: str):
     birthdate = get_date(jobj, "birth")
     deathdate = get_date(jobj, "death")
 
+    wiki_link = get_wikilink(key)
+
     has_dates = birthdate is not None and deathdate is not None
     works = []
     if has_notable_works(jobj):
         works = get_notable_work_keys(jobj)
-    return name, birthdate, deathdate, has_dates, works
+    return name, birthdate, deathdate, has_dates, works, wiki_link
 
 
 def ensure_dir(dirname: str):
@@ -172,6 +186,12 @@ def load_people(dirname: str):
     return p, wk
 
 
+def load_works(dirname: str) -> dict:
+    with io.open(Path(HOME, f"{dirname}/works.json"), "r", encoding="utf8") as f:
+        w = json.loads(f.read())
+    return w
+
+
 def store_works(work_keys_dict: dict, max_works_per_person: int = 5):
     detail_work_dict = {}
     for artist in work_keys_dict.keys():
@@ -180,12 +200,13 @@ def store_works(work_keys_dict: dict, max_works_per_person: int = 5):
         for work_key in work_keys_dict[artist]:
             jobj = get_wikidata_json(work_key)
             work_name = get_name(jobj)
+            wiki_link = get_wikilink(work_key)
             inception = get_date(jobj, "inception")
             instanceof = get_instance_name(jobj)
             if inception is not None and instanceof is not None:
                 print(f"{work_key} -- {work_name} by {artist}")
                 detail_work_dict[artist].append(
-                    [work_key, work_name, inception, instanceof]
+                    [work_key, work_name, inception, instanceof, wiki_link]
                 )
                 n_works += 1
             if n_works == max_works_per_person:
@@ -200,12 +221,33 @@ def scrape_qs_from_wikidata():
     return process_wikidata_keys(keys)
 
 
-if __name__ == "__main__":
+def get_wikilink(key: dict, lang: str = "en") -> str:
+    jobj = get_wikidata_links(key)
+    if jobj is None:
+        return None
 
-    people_dict, work_keys_dict = scrape_people_from_nature(2000)
-    dirname = "nature/all/json/2000"
+    sitelinks = jobj.get("sitelinks")
+    if sitelinks:
+        if lang:
+            # filter only the specified language
+            sitelink = sitelinks.get(f"{lang}wiki")
+            if sitelink:
+                wiki_url = sitelink.get("url")
+                if wiki_url:
+                    return Path(wiki_url).name
+    return None
+
+
+def get_new_people(n_people: int):
+
+    people_dict, work_keys_dict = scrape_people_from_nature(n_people)
+    dirname = f"nature/category/all/json/{n_people}"
 
     save_people(people_dict, work_keys_dict, dirname)
 
     detail_work_dict = store_works(work_keys_dict)
     save_works(detail_work_dict, dirname)
+
+
+if __name__ == "__main__":
+    get_new_people(1000)

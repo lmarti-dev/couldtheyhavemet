@@ -10,10 +10,10 @@ var SCORE = 0
 var DATES = {"left":null,"right":null}
 
 const CATEGORY = "all"
-const N_FAM = 2000
-const URL = `./files/nature/category/${CATEGORY}/json/${N_FAM}`
+var N_FAM = 100
+var JSON_URL
 
-const SVG_W = 200
+const SVG_W = Math.min(window.innerWidth/2 ,200)
 const SVG_H = 100
 
 function get_solution(b){
@@ -30,12 +30,12 @@ async function load_files(url) {
 
 
 async function load_people(){
-  return await load_files(`${URL}/people.json`)
+  return await load_files(`${JSON_URL}/people.json`)
 }
 
 
 async function load_works(){
-  return await load_files(`${URL}/works.json`)
+  return await load_files(`${JSON_URL}/works.json`)
 }
 
 function rand_arr_item(arr){
@@ -117,11 +117,13 @@ function date_difference(time1,time2){
 function bind_difficulty(button){
   button.addEventListener("click",(e)=>{
     let content = document.getElementById("content")
-    DIFFICULTY = button.innerHTML
-    init_game()
-    game_loop()
+    let choice = button.innerHTML
+    if (choice == "Easy"){N_FAM = 100}
+   else if (choice == "Hard"){N_FAM = 1000}
+    JSON_URL = `./files/nature/category/${CATEGORY}/json/${N_FAM}`
     choice = document.getElementById("choice")
     content.removeChild(choice)
+    start_game()
   })
 }
 
@@ -144,8 +146,6 @@ function toggle_freezable(which){
 }
 
 function resolve(choice){
-  let banner = document.getElementById("banner")
-  
   banner_result(choice)
   reveal_dates()
   draw_diagram(DATES)
@@ -230,14 +230,10 @@ function choose_difficulty(){
   let button_easy = document.createElement("button")
   button_easy.innerHTML = "Easy"
   bind_difficulty(button_easy)
-  let button_mix = document.createElement("button")
-  bind_difficulty(button_mix)
-  button_mix.innerHTML = "Mix"
   let button_hard = document.createElement("button")
   bind_difficulty(button_hard)
   button_hard.innerHTML = "Hard"
   choice.appendChild(button_easy)
-  choice.appendChild(button_mix)
   choice.appendChild(button_hard)
   content.appendChild(choice)
 }
@@ -260,6 +256,10 @@ function clear_board(){
 
 function wikidata_link(key){
   return `<a target='_blank' href='https://www.wikidata.org/wiki/${key}'>${key}</a>`
+}
+function wikipedia_link(link){
+  if (link == null){return "<a>∅</a>"}
+  return `<a target='_blank' href='https://en.wikipedia.org/wiki/${link}'>W</a>`
 }
 
 
@@ -306,8 +306,7 @@ function get_extremal_years(dates){
 
   }
   // of course Math.min/max doesn't take an array as input
-  // because the people who wrote it are not used to go past 10 fingers
-  // who ever uses the number 34 it's way too high
+  // of course it doesn't.
   return [Math.min(...arr), Math.max(...arr)]
 }
 
@@ -421,7 +420,7 @@ function process_thing(thing,pos,which){
     person.innerHTML = thing[0]
     person.setAttribute("class","name")
     let person_details  =document.createElement("div")
-    person_details.innerHTML = wikidata_link(thing[1][0])
+    person_details.innerHTML = wikipedia_link(thing[1][3])
     person_details.setAttribute("class","details")
     let person_date = document.createElement("div")
     person_date.setAttribute("class","revealable")
@@ -437,7 +436,7 @@ function process_thing(thing,pos,which){
     work_name.innerHTML = thing[1][1]
     work_name.setAttribute("class","name")
     let work_details  =document.createElement("div")
-    work_details.innerHTML = `by ${thing[0]} — ${thing[1][3]} — ${wikidata_link(thing[1][0])}`
+    work_details.innerHTML = `by ${thing[0]} — ${thing[1][3]} — ${wikipedia_link(thing[1][4])}`
     work_details.setAttribute("class","details")
     let work_date = document.createElement("div")
     work_date.setAttribute("class","revealable")
@@ -468,9 +467,25 @@ function left_pad(item,pad_len,pad_with){
 }
 
 
-function set_score(){
+function set_score(animate=false){
   let score=document.getElementById("score")
-  score.innerHTML = `Score: ${left_pad(SCORE,4,"0")}`
+  let number_span = document.createElement("span")
+  number_span.setAttribute("id","number-span")
+  number_span.innerHTML = left_pad(SCORE,4,"0")
+  score.innerHTML ="Score: "
+  score.append(number_span)
+  var animation_name;
+  if (SCORE == 0){
+    animation_name = "shake"
+  }else{
+    animation_name = "pop"
+  }
+  if (animate) {
+    score.style = `animation: .3s linear 1 normal ${animation_name};`
+    score.addEventListener("animationend",e=>{
+      score.removeAttribute("style")
+    })
+  }
 }
 
 function banner_result(choice){
@@ -478,23 +493,23 @@ function banner_result(choice){
   let banner=document.getElementById("banner")
   let msg;
   if (SOLUTION == choice){
-    msg = "Correct"
+    msg = "✔ Correct"
     SCORE++
   }
   else{
-    msg="False"
+    msg="✖ False"
     SCORE = 0
   }
   let neg = " "
   if (SOLUTION == "no"){
-    neg = " not "
+    neg = " <span style='text-decoration:underline'>not</span> "
   }
   let done = "met"
   if (QUESTION_TYPE == "work"){
     done = "known this"
   }
   banner.innerHTML = `${msg}. They could${neg}have ${done}!`
-  set_score()
+  set_score(true)
 }
 
 function banner_question(question){
@@ -554,11 +569,15 @@ async function load_all(){
   WORKS = await load_works()
 }
 
-async function main() {
+async function start_game(){
   await load_all()
-  // choose_difficulty()
   init_game()
   game_loop()
+}
+
+async function main() {
+  choose_difficulty()
+
 };
 
 

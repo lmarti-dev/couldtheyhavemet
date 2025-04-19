@@ -15,6 +15,7 @@
   --radius-amount: 1px;
 }
 
+
 #content {
   display: flex;
   flex-direction: column;
@@ -25,6 +26,17 @@
 
 .revealable {
   visibility: hidden;
+}
+
+#choice {
+  height: 90vh;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+
+#choice>button {
+  align-self: center;
 }
 
 .info {
@@ -97,12 +109,19 @@ button {
   font-variant: small-caps;
   font-size: large;
   margin: .25em;
+  height: 5em;
+  width: 5em;
   padding: 1em;
 }
 
 canvas {
   width: 70%;
   height: 10%;
+}
+
+svg {
+  display: flex;
+  max-width: auto;
 }
 
 .svg-text {
@@ -112,6 +131,13 @@ canvas {
   font-size: .75em;
 }
 
+#score {
+  border: solid var(--main) thin;
+  border-radius: 1%;
+  padding: .5em;
+  margin: 1em;
+}
+
 .small {
   font-size: .5em;
 }
@@ -119,5 +145,43 @@ canvas {
 @media (max-width: 1250px) {
   .info {
     width: 100%;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+
+  10% {
+    transform: scale(1.12);
+  }
+
+
+  50% {
+    transform: scale(1.03);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  30% {
+    transform: rotate(10deg);
+  }
+
+
+  50% {
+    transform: rotate(-10deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
   }
 }
