@@ -10,7 +10,7 @@ var SCORE = 0
 var DATES = {"left":null,"right":null}
 
 const CATEGORY = "all"
-const N_FAM = 500
+const N_FAM = 2000
 const URL = `./files/nature/category/${CATEGORY}/json/${N_FAM}`
 
 const SVG_W = 200

@@ -15,7 +15,7 @@ def get_wikidata_json(key: str) -> dict:
         f"https://www.wikidata.org/w/api.php?action=wbgetentities&ids={key}&format=json"
     )
     data = requests.get(url)
-    time.sleep(0.1)
+    time.sleep(0.5)
     jobj = data.json()
     info = jobj["entities"][key]
     if "missing" in info.keys():
@@ -81,7 +81,7 @@ def has_notable_works(jobj: dict) -> bool:
     return "P800" in jobj["claims"].keys()
 
 
-def scrape_people_from_nature():
+def scrape_people_from_nature(max_n_persons: int):
     dirname = f"nature/category/all/raw/keys_b1900.txt"
     keys = (
         io.open(
@@ -92,10 +92,10 @@ def scrape_people_from_nature():
         .read()
         .splitlines()
     )
-    return process_wikidata_keys(keys)
+    return process_wikidata_keys(keys, max_n_persons)
 
 
-def process_wikidata_keys(keys: str, max_n_persons: int = 500):
+def process_wikidata_keys(keys: str, max_n_persons: int):
 
     n = 0
     work_keys_dict = {}
@@ -202,8 +202,8 @@ def scrape_qs_from_wikidata():
 
 if __name__ == "__main__":
 
-    people_dict, work_keys_dict = scrape_qs_from_wikidata()
-    dirname = "scraped/all"
+    people_dict, work_keys_dict = scrape_people_from_nature(2000)
+    dirname = "nature/all/json/2000"
 
     save_people(people_dict, work_keys_dict, dirname)
 
