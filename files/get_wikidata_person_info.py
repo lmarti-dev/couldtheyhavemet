@@ -92,11 +92,11 @@ def has_notable_works(jobj: dict) -> bool:
     return "P800" in jobj["claims"].keys()
 
 
-def scrape_people_from_nature(max_n_persons: int):
-    dirname = f"nature/category/all/raw/keys_b1900.txt"
+def scrape_people_from_nature(keys_fpath: str, max_n_persons: int):
+
     keys = (
         io.open(
-            Path(HOME, dirname),
+            Path(HOME, keys_fpath),
             "r",
             encoding="utf8",
         )
@@ -240,8 +240,10 @@ def get_wikilink(key: dict, lang: str = "en") -> str:
 
 def get_new_people(n_people: int):
 
-    people_dict, work_keys_dict = scrape_people_from_nature(n_people)
-    dirname = f"nature/category/all/json/{n_people}"
+    keys_fpath = f"nature/category/d1999/raw/keys_d1999.txt"
+    dirname = f"nature/category/d1999/json/{n_people}"
+
+    people_dict, work_keys_dict = scrape_people_from_nature(keys_fpath, n_people)
 
     save_people(people_dict, work_keys_dict, dirname)
 
@@ -250,4 +252,5 @@ def get_new_people(n_people: int):
 
 
 if __name__ == "__main__":
+    get_new_people(100)
     get_new_people(1000)

@@ -118,8 +118,11 @@ function bind_difficulty(button){
   button.addEventListener("click",(e)=>{
     let content = document.getElementById("content")
     let choice = button.innerHTML
+    
     if (choice == "Easy"){N_FAM = 100}
-   else if (choice == "Hard"){N_FAM = 1000}
+    else if (choice == "Hard"){N_FAM = 1000}
+    
+    DIFFICULTY=choice;
     JSON_URL = `./files/nature/category/${CATEGORY}/json/${N_FAM}`
     choice = document.getElementById("choice")
     content.removeChild(choice)
@@ -135,8 +138,8 @@ function toggle_revealable(which){
   }
 }
 
-function toggle_freezable(which){
-  elems = document.getElementsByClassName("freezable")
+function toggle_by_class(which,class_name){
+  elems = document.getElementsByClassName(class_name)
   for (let ind=0;ind<elems.length;ind++){
     if (which == "disable"){
       elems[ind].setAttribute("disabled","")}
@@ -149,7 +152,8 @@ function resolve(choice){
   banner_result(choice)
   reveal_dates()
   draw_diagram(DATES)
-  toggle_freezable("disable")
+  toggle_by_class("disable","choices")
+  toggle_by_class("enable","nexts")
   toggle_revealable("visible")
 
 
@@ -181,16 +185,17 @@ function init_game(){
 
 
   let yes = document.createElement("button")
-  yes.setAttribute("class","freezable")
+  yes.setAttribute("class","choices")
   yes.innerHTML = "yes"
   answer(yes)
 
   let no = document.createElement("button")
-  no.setAttribute("class","freezable")
+  no.setAttribute("class","choices")
   no.innerHTML = "no"
   answer(no)
 
   let next = document.createElement("button")
+  next.setAttribute("class","nexts")
   next.innerHTML = "next"
   move_on(next)
 
@@ -246,7 +251,8 @@ function clear_board(){
     item.innerHTML=""
 
   }
-  toggle_freezable("enable")
+  toggle_by_class("enable","choices")
+  toggle_by_class("disable","nexts")
   toggle_revealable("hidden")
   clear_dates()
   clear_svg()
@@ -580,6 +586,11 @@ async function main() {
 
 };
 
+
+async function test_stats(n_fam){
+  N_FAM = n_fam
+  await load_all()
+}
 
 document.addEventListener('DOMContentLoaded', (event) => {
   main()
