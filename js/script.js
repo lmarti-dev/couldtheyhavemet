@@ -2,19 +2,23 @@
 var PEOPLE 
 var YEAR_DICT
 var WORKS
-var DIFFICULTY
 var SOLUTION
 var QUESTION_TYPE
 var SCORE = 0
 
 var DATES = {"left":null,"right":null}
 
-const CATEGORY = "all"
-var N_FAM = 100
+var N_FAM;
+var CATEGORY;
 var JSON_URL
 
-const SVG_W = Math.min(window.innerWidth/2 ,200)
-const SVG_H = 100
+const GAMEMODES = [{name:"Top 100 born before 1900",n_fam:100,category:"b1900"},{name:"Top 1000 born before 1900",n_fam:1000,category:"b1900"},{name:"Top 100 passed before 1999",n_fam:100,category:"d1999"},{name:"Top 1000 passed before 1999",n_fam:1000,category:"d1999"}]
+
+const SVG_VB_W = Math.min(window.innerWidth/2 ,200)
+const SVG_VB_H = 100
+
+var SVG_H = 100
+var SVG_W = 300
 
 function get_solution(b){
 // next level coding watch out 10x moves here
@@ -114,20 +118,24 @@ function date_difference(time1,time2){
   return time1-time2
 } 
 
-function bind_difficulty(button){
+function setup_params(n_fam,category){
+  N_FAM=n_fam;
+  CATEGORY = category
+  JSON_URL = `./files/nature/category/${CATEGORY}/json/${N_FAM}`
+}
+
+function setup_gamemode(gamemode){
+  let button = document.createElement("button")
+  button.innerHTML = gamemode.name
   button.addEventListener("click",(e)=>{
     let content = document.getElementById("content")
     let choice = button.innerHTML
-    
-    if (choice == "Easy"){N_FAM = 100}
-    else if (choice == "Hard"){N_FAM = 1000}
-    
-    DIFFICULTY=choice;
-    JSON_URL = `./files/nature/category/${CATEGORY}/json/${N_FAM}`
     choice = document.getElementById("choice")
     content.removeChild(choice)
+    setup_params(gamemode.n_fam,gamemode.category)
     start_game()
   })
+  return button
 }
 
 
@@ -228,18 +236,15 @@ function init_game(){
 
 }
 
-function choose_difficulty(){
+function choose_gamemode(){
   let content = document.getElementById("content")
   let choice = document.createElement("div")
   choice.setAttribute("id","choice")
-  let button_easy = document.createElement("button")
-  button_easy.innerHTML = "Easy"
-  bind_difficulty(button_easy)
-  let button_hard = document.createElement("button")
-  bind_difficulty(button_hard)
-  button_hard.innerHTML = "Hard"
-  choice.appendChild(button_easy)
-  choice.appendChild(button_hard)
+  buttons =[]
+  for (let ind=0;ind<GAMEMODES.length;ind++){
+    button = setup_gamemode(GAMEMODES[ind])
+    choice.appendChild(button)
+  }
   content.appendChild(choice)
 }
 
@@ -275,12 +280,12 @@ function populate_dates(pos,deets){
 
 
 
-function create_svg(){
+function create_svg(_id="date-diagram"){
   let svg = document.createElementNS("http://www.w3.org/2000/svg","svg")
-  svg.setAttribute("id","date-diagram")
-  svg.setAttribute("viewBox",`0 0 ${SVG_W} ${SVG_H}`)
-  svg.setAttribute("height","100")
-  svg.setAttribute("width","300")
+  svg.setAttribute("id",_id)
+  svg.setAttribute("viewBox",`0 0 ${SVG_VB_W} ${SVG_VB_H}`)
+  svg.setAttribute("height",SVG_H)
+  svg.setAttribute("width",SVG_W)
   svg.setAttribute("xmlns","http://www.w3.org/2000/svg")
   return svg
 }
@@ -341,12 +346,12 @@ function draw_diagram(dates){
   let svg = document.getElementById("date-diagram")
   svg.innerHTML =""
 
-  svg.innerHTML+= line(0,SVG_W,SVG_H,SVG_H,1.33) 
+  svg.innerHTML+= line(0,SVG_VB_W,SVG_VB_H,SVG_VB_H,1.33) 
 
   for(x in [...Array(n_ticks).keys()]){
-    var linterp = (x/(n_ticks-1)) * SVG_W
-    svg.innerHTML+=line(linterp,linterp,SVG_H,SVG_H-tick_height,1) 
-    svg.innerHTML+=line(linterp,linterp,SVG_H,0,.1,"silver") 
+    var linterp = (x/(n_ticks-1)) * SVG_VB_W
+    svg.innerHTML+=line(linterp,linterp,SVG_VB_H,SVG_VB_H-tick_height,1) 
+    svg.innerHTML+=line(linterp,linterp,SVG_VB_H,0,.1,"silver") 
   }
 
   if (dates != null){
@@ -354,19 +359,19 @@ function draw_diagram(dates){
     // svg.innerHTML += text(0,SVG_H-stack_height,years[0])
     // svg.innerHTML += text(SVG_W,SVG_H-stack_height,years[1])
 
-    let year_coor = (x) => SVG_W*(x-years[0]) / (years[1]-years[0])
-    let nudge = SVG_W*.02
+    let year_coor = (x) => SVG_VB_W*(x-years[0]) / (years[1]-years[0])
+    let nudge = SVG_VB_W*.02
 
     let keys = Object.keys(dates)
     for (let ind=0;ind<keys.length;ind++){
       let span = thing_to_years(dates[[keys[ind]]])
       if (span.length==1){
-        let tick_start = SVG_H-(2*(ind+1)*stack_height)
+        let tick_start = SVG_VB_H-(2*(ind+1)*stack_height)
         svg.innerHTML+= circle(year_coor(span[0]),tick_start,stack_height/2,1.22,colors[ind]) 
         svg.innerHTML+= line(year_coor(span[0]),year_coor(span[0]),tick_start,tick_start-stack_height/2,1.22,colors[ind]) 
         svg.innerHTML += text(year_coor(span[0]),tick_start-stack_height,span[0],"small")
       } else if  (span.length==2){
-        let bar_height =SVG_H-(2*(ind+1)*stack_height)
+        let bar_height =SVG_VB_H-(2*(ind+1)*stack_height)
         svg.innerHTML += line(year_coor(span[0]),year_coor(span[1]),bar_height,bar_height,12,colors[ind]) 
         svg.innerHTML += text(year_coor(span[0])-nudge,bar_height-stack_height,span[0],"small")
         svg.innerHTML += text(year_coor(span[1])+nudge,bar_height-stack_height,span[1],"small")
@@ -375,8 +380,8 @@ function draw_diagram(dates){
     } 
 
   }else{
-    svg.innerHTML += text(0,SVG_H-stack_height,"0")
-    svg.innerHTML += text(SVG_W,SVG_H-stack_height,"2025")
+    svg.innerHTML += text(0,SVG_VB_H-stack_height,"0")
+    svg.innerHTML += text(SVG_VB_W,SVG_VB_H-stack_height,"2025")
     
   }
 }
@@ -523,40 +528,55 @@ function banner_question(question){
   banner.innerHTML=question
 }
 
+
+function two_random_items(){
+  let person_left = rand_thing(null,PEOPLE,"person")
+  let type_of_right = rand_arr_item(["person","work"])
+  QUESTION_TYPE = type_of_right
+  
+  let person_year = YEAR_DICT[person_left[0]]
+  
+  let thing_right;
+
+
+  if (type_of_right == "person"){    
+    let _people = {...PEOPLE}
+    delete _people[[person_left[0]]]
+    thing_right = rand_thing(person_year,_people,"person")
+  }
+  else if (type_of_right=="work"){
+    if (Object.keys(WORKS).includes(person_left[0])){
+      let _works = {...WORKS}
+      delete _works[[person_left[0]]]
+      thing_right = rand_thing(person_year,_works,"work")
+    }
+    else{
+      thing_right = rand_thing(person_year,WORKS,"work")
+    }
+    
+  }
+  return [person_left,thing_right,type_of_right]
+}
+
 function game_loop(){
   clear_board()
   person1 = rand_thing(null,PEOPLE,"person")
-  let person_year = YEAR_DICT[person1[0]]
-  let [b1,d1]=process_person(person1,pos="left")
 
-  thing2 = rand_arr_item(["person","work"])
-  QUESTION_TYPE = thing2
+  let [person_left,thing_right,type_of_right] = two_random_items()
+  let [b1,d1]=process_person(person_left,pos="left")
+  
+  QUESTION_TYPE = type_of_right
   
   let question;
 
-  if (thing2 == "person"){
-
+  if (type_of_right == "person"){
     question ="Could they have met?"
-    
-    let _people = {...PEOPLE}
-    delete _people[[person1[0]]]
-    let [b2,d2]=process_person(rand_thing(person_year,_people,"person"),pos="right")
+    let [b2,d2]=process_person(thing_right,pos="right")
     SOLUTION = get_solution(spans_overlap(b1,d1,b2,d2))
   }
-  else if (thing2=="work"){
-
+  else if (type_of_right=="work"){
     question = "Could they have known this?"
-
-    let rw;
-    if (Object.keys(WORKS).includes(person1[0])){
-      let _works = {...WORKS}
-      delete _works[[person1[0]]]
-      rw = rand_thing(person_year,_works,"work")
-    }
-    else{
-      rw = rand_thing(person_year,WORKS,"work")
-    }
-    inception=process_work(rw,pos="right")
+    inception=process_work(thing_right,pos="right")
     SOLUTION = get_solution(is_older(inception,d1))
     
   }
@@ -573,6 +593,7 @@ async function load_all(){
   YEAR_DICT = get_people_years()
   content.innerHTML = "Loading 3/3";
   WORKS = await load_works()
+  content.innerHTML=""
 }
 
 async function start_game(){
@@ -582,16 +603,65 @@ async function start_game(){
 }
 
 async function main() {
-  choose_difficulty()
+  choose_gamemode()
 
 };
 
 
-async function test_stats(n_fam){
-  N_FAM = n_fam
+async function test_stats(gamemode,n_samples=100){
+
+  setup_params(gamemode.n_fam,gamemode.category)
   await load_all()
+
+  var people_names = new Map()
+  Object.keys(PEOPLE).map((k)=>people_names.set(k,0))
+  var work_names = new Map()
+  Object.keys(WORKS).map((artist)=>WORKS[artist].map(details=>work_names.set(details[1],0)))
+
+  setup_params(gamemode.n_fam,gamemode.category)
+  for (let n=0;n<n_samples;n++){
+    let [person_left,thing_right,type_of_right] = two_random_items()
+    people_names.set(person_left[0],people_names.get(person_left[0])+1)
+    if (type_of_right=="work"){
+      work_names.set(thing_right[1][1],work_names.get(thing_right[1][1])+1)
+    }else if  (type_of_right=="person"){
+      people_names.set(thing_right[0],people_names.get(thing_right[0])+1)
+    }
+  }
+
+  console.log(people_names)
+  console.log(work_names)
+
+  
+  let people_values = [...people_names.values()]
+  let work_values = [...work_names.values()]
+  let all_values = [people_values,work_values]
+
+  for (let arr_ind in all_values){
+  SVG_W=1000
+  SVG_H=500
+  svg = create_svg("test-stats")
+
+  svg.innerHTML+= line(0,SVG_VB_W,0,0)
+  svg.innerHTML+= line(0,0,0,SVG_VB_H)
+  let max_sampled = Math.max(...all_values[arr_ind])
+  for (let nk=0;nk<all_values[arr_ind].length;nk++){
+    let x_pos = SVG_VB_W*nk/all_values[arr_ind].length
+    let y_height = SVG_VB_H*all_values[arr_ind][nk]/max_sampled
+    svg.innerHTML+= line(x_pos,x_pos,0,y_height,color="red")
+    svg.innerHTML+= line(x_pos,x_pos,-5,5,width=.1)
+    if (arr_ind==0){
+      svg.innerHTML += text(SVG_VB_W/2,SVG_VB_H/2,"People")
+    } else{
+      svg.innerHTML += text(SVG_VB_W/2,SVG_VB_H/2,"Works")
+    }
+  }
+
+  let content = document.getElementById("content")
+  content.appendChild(svg)}
 }
 
 document.addEventListener('DOMContentLoaded', (event) => {
   main()
+  // test_stats(GAMEMODES[1],10000)
 });

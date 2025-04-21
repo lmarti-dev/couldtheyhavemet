@@ -30,13 +30,16 @@
 
 #choice {
   height: 90vh;
+  width: fit-content;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  justify-content: center;
   flex-wrap: nowrap;
 }
 
 #choice>button {
   align-self: center;
+  width: 100%;
 }
 
 .info {
