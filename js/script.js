@@ -167,17 +167,39 @@ function resolve(choice){
 
 }
 
-function answer(button){
+function answer(button,keyname=null){
   button.addEventListener("click",(e)=>{
     resolve(button.innerHTML)
   })
+  keybind_button(button,keyname,()=>{resolve(button.innerHTML)})
 }
 
-function move_on(button){
+function keybind_button(button,keyname,callback){
+  if (keyname!=null){
+    window.addEventListener('keydown', function(event) {
+      if (event.defaultPrevented) {
+        return; // Do nothing if event already handled
+      }
+      if (event.code === keyname) {
+        if (!button.hasAttribute("disabled")){
+        callback()
+        }else{
+        add_animation(button,"shake")}
+      }
+        
+      
+    });}
+}
+
+function move_on(button,keyname=null){
   button.addEventListener("click",(e)=>{
     game_loop()
   })
+  
+  keybind_button(button,keyname,()=>{game_loop()})
 }
+
+
 
 function init_game(){
   let left = document.createElement("div")
@@ -195,17 +217,17 @@ function init_game(){
   let yes = document.createElement("button")
   yes.setAttribute("class","choices")
   yes.innerHTML = "yes"
-  answer(yes)
+  answer(yes,"KeyA")
 
   let no = document.createElement("button")
   no.setAttribute("class","choices")
   no.innerHTML = "no"
-  answer(no)
+  answer(no,"KeyD")
 
   let next = document.createElement("button")
   next.setAttribute("class","nexts")
   next.innerHTML = "next"
-  move_on(next)
+  move_on(next,"Space")
 
   let action = document.createElement("div")
   action.setAttribute("id","action")
@@ -478,6 +500,13 @@ function left_pad(item,pad_len,pad_with){
 }
 
 
+function add_animation(item, which){
+  item.style = `animation: .22s linear 1 normal ${which};`
+  item.addEventListener("animationend",e=>{
+    item.removeAttribute("style")
+    })
+}
+
 function set_score(animate=false){
   let score=document.getElementById("score")
   let number_span = document.createElement("span")
@@ -485,17 +514,14 @@ function set_score(animate=false){
   number_span.innerHTML = left_pad(SCORE,4,"0")
   score.innerHTML ="Score: "
   score.append(number_span)
-  var animation_name;
+  var pop_or_shake;
   if (SCORE == 0){
-    animation_name = "shake"
+    pop_or_shake = "shake"
   }else{
-    animation_name = "pop"
+    pop_or_shake = "pop"
   }
   if (animate) {
-    score.style = `animation: .3s linear 1 normal ${animation_name};`
-    score.addEventListener("animationend",e=>{
-      score.removeAttribute("style")
-    })
+    add_animation(score,pop_or_shake)
   }
 }
 
