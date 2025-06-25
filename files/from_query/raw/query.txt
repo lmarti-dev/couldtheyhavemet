@@ -1,1 +1,0 @@
-https://query.wikidata.org/#SELECT%20%3Fperson%20WHERE%20%7B%20%3Fperson%20wdt%3AP31%20wd%3AQ5%20%7D%0Alimit%20100000

@@ -192,23 +192,34 @@ def load_works(dirname: str) -> dict:
     return w
 
 
-def store_works(work_keys_dict: dict, max_works_per_person: int = 5):
+def load_work_keys(dirname: str) -> dict:
+    with io.open(Path(HOME, f"{dirname}/work_keys.json"), "r", encoding="utf8") as f:
+        w = json.loads(f.read())
+    return w
+
+
+def obtain_works(work_keys_dict: dict, max_works_per_person: int = 5):
     detail_work_dict = {}
     for artist in work_keys_dict.keys():
         detail_work_dict[artist] = []
         n_works = 0
         for work_key in work_keys_dict[artist]:
-            jobj = get_wikidata_json(work_key)
-            work_name = get_name(jobj)
-            wiki_link = get_wikilink(work_key)
-            inception = get_date(jobj, "inception")
-            instanceof = get_instance_name(jobj)
-            if inception is not None and instanceof is not None:
-                print(f"{work_key} -- {work_name} by {artist}")
-                detail_work_dict[artist].append(
-                    [work_key, work_name, inception, instanceof, wiki_link]
-                )
-                n_works += 1
+            try:
+                jobj = get_wikidata_json(work_key)
+                work_name = get_name(jobj)
+                wiki_link = get_wikilink(work_key)
+                inception = get_date(jobj, "inception")
+                instanceof = get_instance_name(jobj)
+                if inception is not None and instanceof is not None:
+                    print(
+                        f"{n_works}/{len(work_keys_dict)} {work_key} -- {work_name} by {artist}"
+                    )
+                    detail_work_dict[artist].append(
+                        [work_key, work_name, inception, instanceof, wiki_link]
+                    )
+                    n_works += 1
+            except Exception:
+                pass
             if n_works == max_works_per_person:
                 break
         if detail_work_dict[artist] == []:
@@ -238,6 +249,44 @@ def get_wikilink(key: dict, lang: str = "en") -> str:
     return None
 
 
+def append_pk_to_people():
+    dirname = "complete/json"
+    people_dict, _ = load_people(dirname)
+    qkeys = load_complete_keys()
+    for pk, q in enumerate(qkeys):
+        for name in people_dict:
+            if people_dict[name][0] == q:
+                people_dict[name].append(pk)
+                break
+
+    with io.open(Path(HOME, f"{dirname}/people.json"), "w+", encoding="utf8") as f:
+        f.write(json.dumps(people_dict, ensure_ascii=False))
+
+
+def load_complete_keys():
+    fpath = r"c:\projects\Resources\listes\most_famous_1538_d1999.json"
+    with io.open(fpath, "r", encoding="utf8") as f:
+        jobj = json.loads(f.read())
+    qkeys = [j[0] for j in jobj]
+
+    return qkeys
+
+
+def get_complete():
+    qkeys = load_complete_keys()
+
+    dirname = f"complete/json"
+
+    # people_dict, work_keys_dict = process_wikidata_keys(qkeys, -1)
+
+    # save_people(people_dict, work_keys_dict, dirname)
+
+    work_keys_dict = load_work_keys("complete/json")
+
+    detail_work_dict = obtain_works(work_keys_dict)
+    save_works(detail_work_dict, dirname)
+
+
 def get_new_people(n_people: int):
 
     keys_fpath = f"nature/category/d1999/raw/keys_d1999.txt"
@@ -247,10 +296,9 @@ def get_new_people(n_people: int):
 
     save_people(people_dict, work_keys_dict, dirname)
 
-    detail_work_dict = store_works(work_keys_dict)
+    detail_work_dict = obtain_works(work_keys_dict)
     save_works(detail_work_dict, dirname)
 
 
 if __name__ == "__main__":
-    get_new_people(100)
-    get_new_people(1000)
+    append_pk_to_people()
