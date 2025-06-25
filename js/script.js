@@ -9,16 +9,16 @@ var DATES = { left: null, right: null }
 
 var N_FAM
 var JSON_URL
+var CALIBRATION
+var DIFFICULTY
 
 const GAMEMODES = [
-  { name: 'Easy', n_fam: 100, calibration: 600 },
-  { name: 'Hard', n_fam: 1000, calibration: 600 }
+  { name: 'Easy', n_fam: 100, calibration: 300 },
+  { name: 'Hard', n_fam: 1000, calibration: 300 }
 ]
 
 const SVG_VB_W = Math.min(window.innerWidth / 2, 200)
 const SVG_VB_H = 100
-
-var CALIBRATION
 
 var SVG_H = 100
 var SVG_W = 300
@@ -154,9 +154,10 @@ function date_difference (time1, time2) {
   return time1 - time2
 }
 
-function setup_params (n_fam, calibration) {
-  N_FAM = n_fam
-  CALIBRATION = calibration
+function setup_params (gamemode) {
+  N_FAM = gamemode.n_fam
+  CALIBRATION = gamemode.calibration
+  DIFFICULTY = gamemode.name
   JSON_URL = `./files/complete/json`
 }
 
@@ -166,7 +167,7 @@ function bind_gamemode (elem, gamemode) {
     let choice = button.innerHTML
     choice = document.getElementById('choice')
     content.removeChild(choice)
-    setup_params(gamemode.n_fam, gamemode.calibration)
+    setup_params(gamemode)
     start_game()
   })
 }
@@ -282,11 +283,16 @@ function init_game () {
   let score = document.createElement('div')
   score.setAttribute('id', 'score')
 
+  let diff = document.createElement('div')
+  diff.setAttribute('id', 'diff')
+  diff.innerHTML = DIFFICULTY
+
   let content = document.getElementById('content')
 
   let svg = create_svg()
 
   content.innerHTML = ''
+  content.appendChild(diff)
   content.appendChild(score)
   content.appendChild(banner)
   content.appendChild(info)
@@ -719,7 +725,7 @@ async function main () {
 }
 
 document.addEventListener('DOMContentLoaded', event => {
-  // main()
+  main()
   // test_stats(GAMEMODES[0],10000)
-  test_yesno_ratio(GAMEMODES[1], 100000)
+  // test_yesno_ratio(GAMEMODES[1], 100000)
 })

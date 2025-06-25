@@ -1,5 +1,5 @@
 async function test_stats (gamemode, n_samples = 100) {
-  setup_params(gamemode.n_fam, gamemode.calibration)
+  setup_params(gamemode)
   await load_all()
 
   var people_names = new Map()
@@ -9,7 +9,7 @@ async function test_stats (gamemode, n_samples = 100) {
     WORKS[artist].map(details => work_names.set(details[1], 0))
   )
 
-  setup_params(gamemode.n_fam, gamemode.calibration)
+  setup_params(gamemode)
   for (let n = 0; n < n_samples; n++) {
     let [person_left, thing_right, type_of_right] = two_random_items()
     people_names.set(person_left[0], people_names.get(person_left[0]) + 1)
@@ -65,7 +65,7 @@ async function test_stats (gamemode, n_samples = 100) {
 }
 
 async function test_yesno_ratio (gamemode, n_samples) {
-  setup_params(gamemode.n_fam, gamemode.calibration)
+  setup_params(gamemode)
   await load_all()
 
   arr = { yes: 0, no: 0 }
@@ -97,3 +97,5 @@ async function test_yesno_ratio (gamemode, n_samples) {
     arr[SOLUTION] += 1
   }
 }
+
+function test_distance (gamemode, n_samples) {}
