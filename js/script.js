@@ -13,8 +13,8 @@ var CALIBRATION
 var DIFFICULTY
 
 const GAMEMODES = [
-  { name: 'Easy', n_fam: 100, calibration: 300 },
-  { name: 'Hard', n_fam: 1000, calibration: 300 }
+  { name: 'Easy', n_fam: 100, calibration: 100 },
+  { name: 'Hard', n_fam: 1000, calibration: 100 }
 ]
 
 const SVG_VB_W = Math.min(window.innerWidth / 2, 200)
@@ -726,6 +726,6 @@ async function main () {
 
 document.addEventListener('DOMContentLoaded', event => {
   main()
-  // test_stats(GAMEMODES[0],10000)
+  // test_stats(GAMEMODES[0], 10000)
   // test_yesno_ratio(GAMEMODES[1], 100000)
 })
