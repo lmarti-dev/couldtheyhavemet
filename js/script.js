@@ -13,8 +13,8 @@ var CALIBRATION
 var DIFFICULTY
 
 const GAMEMODES = [
-  { name: 'Easy', n_fam: 100, calibration: 100 },
-  { name: 'Hard', n_fam: 1000, calibration: 100 }
+  { name: 'Easy', n_fam: 100, calibration: 10 },
+  { name: 'Hard', n_fam: 1000, calibration: 10 }
 ]
 
 const SVG_VB_W = Math.min(window.innerWidth / 2, 200)
@@ -654,9 +654,64 @@ function banner_question (question) {
   banner.innerHTML = question
 }
 
+function with_these_keys (arr, keys) {
+  var fout = {}
+  keys.map(e => {
+    fout[[e]] = arr[[e]]
+  })
+  return fout
+}
+
+function filter_people_array (person, array, which) {
+  let b = date_from_arr(person[1][1])
+  let d = date_from_arr(person[1][2])
+  let keys = Object.keys(array).filter(e => {
+    return (
+      which ==
+      spans_overlap(
+        b,
+        d,
+        date_from_arr(PEOPLE[[e]][1]),
+        date_from_arr(PEOPLE[[e]][2])
+      )
+    )
+  })
+
+  return with_these_keys(PEOPLE, keys)
+}
+function filter_works_array (person, array, which) {
+  let d = date_from_arr(person[1][2])
+  let keys = Object.keys(array)
+  let out = {}
+  for (let ind = 0; ind < keys.length; ind++) {
+    let name = keys[ind]
+    let out_works = array[[name]].filter(e => {
+      return which == is_older(date_from_arr(e[2]), d)
+    })
+    if (out_works.length > 0) {
+      out[[name]] = out_works
+    }
+  }
+
+  return out
+}
+
+function remove_self (name) {
+  let _works
+  if (Object.keys(WORKS).includes(name)) {
+    _works = { ...WORKS }
+    delete _works[[name]]
+  } else {
+    _works = WORKS
+  }
+  return _works
+}
+
 function two_random_items () {
   let person_left = rand_thing(null, PEOPLE, 'person')
   let type_of_right = rand_arr_item(['person', 'work'])
+  let outcome = rand_arr_item([true, false])
+
   QUESTION_TYPE = type_of_right
 
   let person_year = YEAR_DICT[person_left[0]]
@@ -666,15 +721,20 @@ function two_random_items () {
   if (type_of_right == 'person') {
     let _people = { ...PEOPLE }
     delete _people[[person_left[0]]]
-    thing_right = rand_thing(person_year, _people, 'person')
-  } else if (type_of_right == 'work') {
-    if (Object.keys(WORKS).includes(person_left[0])) {
-      let _works = { ...WORKS }
-      delete _works[[person_left[0]]]
-      thing_right = rand_thing(person_year, _works, 'work')
-    } else {
-      thing_right = rand_thing(person_year, WORKS, 'work')
+    let filtered_people = filter_people_array(person_left, _people, outcome)
+    if (Object.keys(filtered_people).length == 0) {
+      outcome = !outcome
+      filtered_people = filter_people_array(person_left, _people, outcome)
     }
+    thing_right = rand_thing(person_year, filtered_people, 'person')
+  } else if (type_of_right == 'work') {
+    let _works = remove_self(person_left[0])
+    let filtered_works = filter_works_array(person_left, _works, outcome)
+    if (Object.keys(filtered_works).length == 0) {
+      outcome = !outcome
+      filtered_works = filter_works_array(person_left, _works, outcome)
+    }
+    thing_right = rand_thing(person_year, filtered_works, 'work')
   }
   return [person_left, thing_right, type_of_right]
 }
@@ -727,5 +787,5 @@ async function main () {
 document.addEventListener('DOMContentLoaded', event => {
   main()
   // test_stats(GAMEMODES[0], 10000)
-  // test_yesno_ratio(GAMEMODES[1], 100000)
+  // test_yesno_ratio(GAMEMODES[1], 1000)
 })
