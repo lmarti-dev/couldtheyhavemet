@@ -41,6 +41,14 @@ def get_name(jobj: dict):
     return jobj["labels"][lang]["value"]
 
 
+def try_date_types(jobj: dict, whichs: list[str]) -> str:
+    for which in whichs:
+        date = get_date(jobj, which)
+        if date is not None:
+            return date, which
+    return None
+
+
 def get_date(jobj: dict, which: str) -> str:
     if which == "birth":
         key = "P569"
@@ -48,6 +56,10 @@ def get_date(jobj: dict, which: str) -> str:
         key = "P570"
     elif which == "inception":
         key = "P571"
+    elif which == "publication":
+        key = "P577"
+    elif which == "performance":
+        key = "P1191"
     if key not in jobj["claims"].keys():
         return None
     if jobj["claims"][key][0]["mainsnak"]["snaktype"] == "somevalue":
@@ -121,7 +133,7 @@ def process_wikidata_keys(keys: str, max_n_persons: int):
                 work_keys_dict[name] = works
 
             if has_dates:
-                print(f"{n: >{n_char}}/{max_n_persons} {key} -- {name}")
+                print(f"{n: <{n_char}}/{max_n_persons} {key} -- {name}")
                 people_dict[name] = [key, birthdate, deathdate, wiki_link]
 
             n += 1
@@ -200,19 +212,22 @@ def load_work_keys(dirname: str) -> dict:
 
 def obtain_works(work_keys_dict: dict, max_works_per_person: int = 5):
     detail_work_dict = {}
+    n_works = 0
+    n_chars = len(str(len(work_keys_dict.keys())))
     for artist in work_keys_dict.keys():
         detail_work_dict[artist] = []
-        n_works = 0
         for work_key in work_keys_dict[artist]:
             try:
                 jobj = get_wikidata_json(work_key)
                 work_name = get_name(jobj)
                 wiki_link = get_wikilink(work_key)
-                inception = get_date(jobj, "inception")
+                inception, which_date = try_date_types(
+                    jobj, ["publication", "performance", "inception"]
+                )
                 instanceof = get_instance_name(jobj)
                 if inception is not None and instanceof is not None:
                     print(
-                        f"{n_works}/{len(work_keys_dict)} {work_key} -- {work_name} by {artist}"
+                        f"{n_works: <{n_chars}}/{len(work_keys_dict)} {work_key} -- {work_name} by {artist} ({which_date})"
                     )
                     detail_work_dict[artist].append(
                         [work_key, work_name, inception, instanceof, wiki_link]
@@ -301,4 +316,4 @@ def get_new_people(n_people: int):
 
 
 if __name__ == "__main__":
-    append_pk_to_people()
+    get_complete()
