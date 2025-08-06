@@ -182,6 +182,12 @@ svg {
   #score,#content,.info>div{
     margin: .1em;
   }
+  .info>div,#date-diagram{
+    height: 8em;
+  }
+  .date{
+    padding: .25em;
+  }
 }
 
 @keyframes pop {
