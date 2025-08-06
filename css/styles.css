@@ -7,7 +7,7 @@
 :root {
   --main: #0d2046;
   --light: #e2e6ee;
-  --accent: #697267;
+  --accent: #6f6f6f;
   --bg: #988484;
   --black: #292929;
   --width-mode: auto;
@@ -16,11 +16,17 @@
 }
 
 
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+}
 #content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 1em;
+  width: 100%;
 
 }
 
@@ -137,17 +143,44 @@ svg {
 #score {
   border: solid var(--main) thin;
   border-radius: 1%;
-  padding: .5em;
+  padding: .25em .5em;
   margin: 1em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
+
 
 .small {
   font-size: .5em;
 }
 
+#about{
+  padding: 1em;
+}
+
+#about-link{
+  cursor: pointer;
+  text-decoration: underline solid 1px black;
+}
+
+.hidden{
+  display: none !important;
+}
+
+.discreet{
+  color: var(--accent);
+}
+
 @media (max-width: 1250px) {
   .info {
     width: 100%;
+  }
+  .info>div{
+  box-shadow: .1em .1em 0em var(--shadow-color);
+  }
+  #score,#content,.info>div{
+    margin: .1em;
   }
 }
 

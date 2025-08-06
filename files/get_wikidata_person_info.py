@@ -210,12 +210,13 @@ def load_work_keys(dirname: str) -> dict:
     return w
 
 
-def obtain_works(work_keys_dict: dict, max_works_per_person: int = 5):
+def obtain_works(work_keys_dict: dict, max_works_per_person: int = 4):
     detail_work_dict = {}
-    n_works = 0
+
     n_chars = len(str(len(work_keys_dict.keys())))
     for artist in work_keys_dict.keys():
         detail_work_dict[artist] = []
+        n_works = 0
         for work_key in work_keys_dict[artist]:
             try:
                 jobj = get_wikidata_json(work_key)

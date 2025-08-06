@@ -4,6 +4,7 @@ var WORKS
 var SOLUTION
 var QUESTION_TYPE
 var SCORE = 0
+var BEST = 0
 
 var DATES = { left: null, right: null }
 
@@ -283,16 +284,11 @@ function init_game () {
   let score = document.createElement('div')
   score.setAttribute('id', 'score')
 
-  let diff = document.createElement('div')
-  diff.setAttribute('id', 'diff')
-  diff.innerHTML = DIFFICULTY
-
   let content = document.getElementById('content')
 
   let svg = create_svg()
 
   content.innerHTML = ''
-  content.appendChild(diff)
   content.appendChild(score)
   content.appendChild(banner)
   content.appendChild(info)
@@ -501,6 +497,19 @@ function draw_diagram (dates) {
         )
       }
     }
+
+    if (SOLUTION == 'no') {
+      let dist = get_date_distance()
+      let svg = document.getElementById('date-diagram')
+      if (dist < 365) {
+        svg.innerHTML += text(
+          SVG_VB_W / 2,
+          stack_height,
+          `about ${dist} days apart!`,
+          'small'
+        )
+      }
+    }
   } else {
     svg.innerHTML += text(0, SVG_VB_H - stack_height, '0')
     svg.innerHTML += text(SVG_VB_W, SVG_VB_H - stack_height, '2025')
@@ -510,6 +519,21 @@ function draw_diagram (dates) {
 function clear_svg () {
   let svg = document.getElementById('date-diagram')
   svg.innerHTML = ''
+}
+
+function get_date_distance () {
+  var milli_per_day = 24 * 60 * 60 * 1000
+  let b1 = DATES.left[0]
+  let d1 = DATES.left[1]
+  let which = get_date_kind(DATES.right)
+  if (which == 'person') {
+    let b2 = DATES.right[0]
+    let d2 = DATES.right[1]
+    return Math.round((Math.max(b1, b2) - Math.min(d1, d2)) / milli_per_day)
+  } else if (which == 'work') {
+    let inc = DATES.right
+    return Math.round(Math.max(inc - d1, b1 - inc) / milli_per_day)
+  }
 }
 
 function reveal_dates () {
@@ -528,6 +552,7 @@ function reveal_dates () {
       let inception = DATES[[pos]]
       date_div.innerHTML = inception.getFullYear()
     }
+
     date_div.setAttribute('id', `${pos}-date`)
     date_div.setAttribute('class', `date`)
     div.insertBefore(date_div, div.childNodes[1])
@@ -610,12 +635,26 @@ function add_animation (item, which) {
 }
 
 function set_score (animate = false) {
+  if (SCORE > BEST) {
+    BEST = SCORE
+  }
   let score = document.getElementById('score')
+  score.innerHTML = ''
+  let current_score = document.createElement('div')
+  let more_info = document.createElement('div')
+  more_info.setAttribute('class', 'small')
+  let best_span = document.createElement('span')
+  best_span.innerHTML = left_pad(BEST, 4, '0')
+  more_info.innerHTML = `${DIFFICULTY} - Best: `
+  more_info.append(best_span)
+  current_score.setAttribute('class', 'current-score')
   let number_span = document.createElement('span')
   number_span.setAttribute('id', 'number-span')
   number_span.innerHTML = left_pad(SCORE, 4, '0')
-  score.innerHTML = 'Score: '
-  score.append(number_span)
+  current_score.innerHTML = 'Score: '
+  current_score.append(number_span)
+  score.append(current_score)
+  score.append(more_info)
   var pop_or_shake
   if (SCORE == 0) {
     pop_or_shake = 'shake'
@@ -623,7 +662,7 @@ function set_score (animate = false) {
     pop_or_shake = 'pop'
   }
   if (animate) {
-    add_animation(score, pop_or_shake)
+    add_animation(current_score, pop_or_shake)
   }
 }
 
@@ -780,7 +819,27 @@ async function start_game () {
   game_loop()
 }
 
+function bind_about_link () {
+  let about_link = document.getElementById('about-link')
+  let about = document.getElementById('about')
+  let content = document.getElementById('content')
+  about.classList.add('hidden')
+  about_link.addEventListener('click', e => {
+    if (about.classList.contains('hidden')) {
+      about.classList.remove('hidden')
+      content.classList.add('hidden')
+    } else if (!about.classList.contains('hidden')) {
+      about.classList.add('hidden')
+      content.classList.remove('hidden')
+    } else {
+      about.classList.add('hidden')
+      content.classList.remove('hidden')
+    }
+  })
+}
+
 async function main () {
+  bind_about_link()
   choose_gamemode()
 }
 
