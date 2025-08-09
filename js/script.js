@@ -843,7 +843,7 @@ async function main () {
 }
 
 document.addEventListener('DOMContentLoaded', event => {
-  // main()
-  test_stats(GAMEMODES[1], 10000)
+  main()
+  // test_stats(GAMEMODES[1], 10000)
   // test_yesno_ratio(GAMEMODES[1], 1000)
 })
