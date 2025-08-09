@@ -823,7 +823,6 @@ function bind_about_link () {
   let about_link = document.getElementById('about-link')
   let about = document.getElementById('about')
   let content = document.getElementById('content')
-  about.classList.add('hidden')
   about_link.addEventListener('click', e => {
     if (about.classList.contains('hidden')) {
       about.classList.remove('hidden')
@@ -844,7 +843,7 @@ async function main () {
 }
 
 document.addEventListener('DOMContentLoaded', event => {
-  main()
-  // test_stats(GAMEMODES[0], 10000)
+  // main()
+  test_stats(GAMEMODES[1], 10000)
   // test_yesno_ratio(GAMEMODES[1], 1000)
 })
