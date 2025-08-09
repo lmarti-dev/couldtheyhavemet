@@ -35,18 +35,29 @@ def get_wikidata_links(key: str) -> dict:
 
 
 def get_name(jobj: dict):
-    lang = "en"
-    if "en" not in jobj["labels"].keys():
-        lang = list(jobj["labels"].keys())[0]
+    langs = ["en", "mul", "fr"]
+    for lang in langs:
+        if lang in jobj["labels"].keys():
+            return jobj["labels"][lang]["value"]
+    lang = list(jobj["labels"].keys())[0]
     return jobj["labels"][lang]["value"]
 
 
-def try_date_types(jobj: dict, whichs: list[str]) -> str:
+def try_date_types(jobj: dict, whichs: list[str]) -> tuple:
+    data = []
     for which in whichs:
-        date = get_date(jobj, which)
-        if date is not None:
-            return date, which
-    return None
+
+        data_date = get_date(jobj, which)
+        if data_date is not None:
+            date, precision = data_date
+            # precision 7 is century level
+            if date is not None and precision > 7:
+                data.append([date, which, precision])
+
+    if data == []:
+        return None
+    else:
+        return data[0]
 
 
 def get_date(jobj: dict, which: str) -> str:
@@ -60,16 +71,19 @@ def get_date(jobj: dict, which: str) -> str:
         key = "P577"
     elif which == "performance":
         key = "P1191"
+    elif which == "discovery":
+        key = "P575"
     if key not in jobj["claims"].keys():
         return None
     if jobj["claims"][key][0]["mainsnak"]["snaktype"] == "somevalue":
         return None
     iso_date = jobj["claims"][key][0]["mainsnak"]["datavalue"]["value"]["time"]
+    precision = jobj["claims"][key][0]["mainsnak"]["datavalue"]["value"]["precision"]
     m = re.search(
         r"^(?P<year>[-+]?[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})", iso_date
     )
     # yuck yuck yuck js
-    return [int(m.group("year")), int(m.group("month")), int(m.group("day"))]
+    return [int(m.group("year")), int(m.group("month")), int(m.group("day"))], precision
 
 
 def get_instance_name(jobj: dict):
@@ -152,8 +166,8 @@ def get_person_data_from_key(key: str):
         return None
     name = get_name(jobj)
 
-    birthdate = get_date(jobj, "birth")
-    deathdate = get_date(jobj, "death")
+    birthdate, _ = get_date(jobj, "birth")
+    deathdate, _ = get_date(jobj, "death")
 
     wiki_link = get_wikilink(key)
 
@@ -214,7 +228,7 @@ def obtain_works(work_keys_dict: dict, max_works_per_person: int = 4):
     detail_work_dict = {}
 
     n_chars = len(str(len(work_keys_dict.keys())))
-    for artist in work_keys_dict.keys():
+    for ind, artist in enumerate(work_keys_dict.keys()):
         detail_work_dict[artist] = []
         n_works = 0
         for work_key in work_keys_dict[artist]:
@@ -222,20 +236,22 @@ def obtain_works(work_keys_dict: dict, max_works_per_person: int = 4):
                 jobj = get_wikidata_json(work_key)
                 work_name = get_name(jobj)
                 wiki_link = get_wikilink(work_key)
-                inception, which_date = try_date_types(
-                    jobj, ["publication", "performance", "inception"]
-                )
-                instanceof = get_instance_name(jobj)
-                if inception is not None and instanceof is not None:
-                    print(
-                        f"{n_works: <{n_chars}}/{len(work_keys_dict)} {work_key} -- {work_name} by {artist} ({which_date})"
-                    )
-                    detail_work_dict[artist].append(
-                        [work_key, work_name, inception, instanceof, wiki_link]
-                    )
-                    n_works += 1
-            except Exception:
-                pass
+                data = try_date_types(jobj, ["performance", "publication", "inception"])
+                if data is not None:
+                    inception, which_date, _ = data
+                    instanceof = get_instance_name(jobj)
+                    if inception is not None and instanceof is not None:
+                        print(
+                            f"{ind: <{n_chars}}/{len(work_keys_dict)} {work_key} -- {work_name} by {artist} ({which_date})"
+                        )
+                        detail_work_dict[artist].append(
+                            [work_key, work_name, inception, instanceof, wiki_link]
+                        )
+                        n_works += 1
+                    else:
+                        print(f"{work_name} by {artist}: No valid date/instance")
+            except Exception as e:
+                print(f"Exception {work_name} by {artist}: {e}")
             if n_works == max_works_per_person:
                 break
         if detail_work_dict[artist] == []:
